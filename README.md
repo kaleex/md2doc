@@ -1,35 +1,35 @@
-# Plantilla Markdown a DOCX/PDF
+# Markdown to DOCX/PDF Template
 
-Plantilla limpia y reproducible para generar documentos Word `.docx` y PDF desde Markdown.
+A clean, reproducible template for generating Word `.docx` and PDF documents from Markdown.
 
-## Instalacion
+## Installation
 
-Con `uv`:
+With `uv`:
 
 ```powershell
 uv sync
 ```
 
-Si tienes `make` disponible:
+If you have `make` available:
 
 ```powershell
 make install
 ```
 
-## Estructura recomendada
+## Recommended Structure
 
 ```text
-mi_documento/
-  partes/
-    00_portada.md
-    01_resumen.md
-    02_arquitectura.md
+my_document/
+  sections/
+    00_cover.md
+    01_summary.md
+    02_architecture.md
   assets/
-    diagrama_contexto.png
-    flujo_datos.png
+    context_diagram.png
+    data_flow.png
   dist/
-    documento.docx
-    documento.pdf
+    document.docx
+    document.pdf
   tools/
     md_to_docx_cli.py
     md_to_pdf_cli.py
@@ -39,87 +39,87 @@ mi_documento/
   pyproject.toml
 ```
 
-Usa prefijos numericos en `partes/` para controlar el orden de salida.
+Use numeric prefixes in `sections/` to control the output order.
 
-## Generar todo
+## Generate Everything
 
 ```powershell
 make build
 ```
 
-En Windows, si no tienes `make`, puedes usar:
+On Windows, if you do not have `make`, use:
 
 ```powershell
 .\build.ps1
 ```
 
-Genera:
+This generates:
 
 ```text
-dist/documento.pdf
-dist/documento.docx
+dist/document.pdf
+dist/document.docx
 ```
 
-Puedes personalizar nombre, titulo y pie:
+You can customize the output name, title, and footer:
 
 ```powershell
-make build DOC_NAME=arquitectura DOC_TITLE="Arquitectura v0" DOC_FOOTER="Documento de trabajo"
+make build DOC_NAME=architecture DOC_TITLE="Architecture v0" DOC_FOOTER="Working document"
 ```
 
-## Generar por separado
+## Generate Separately
 
 ```powershell
 make pdf
 make docx
 ```
 
-Sin `make`:
+Without `make`:
 
 ```powershell
-python tools\md_to_docx_cli.py partes dist\documento.docx
-python tools\md_to_pdf_cli.py partes dist\documento.pdf --title "Mi documento" --footer "Documento de trabajo"
+python tools\md_to_docx_cli.py sections dist\document.docx
+python tools\md_to_pdf_cli.py sections dist\document.pdf --title "My document" --footer "Working document"
 ```
 
-Sin `make`, pero usando `uv`:
+Without `make`, but using `uv`:
 
 ```powershell
-uv run python tools\md_to_docx_cli.py partes dist\documento.docx
-uv run python tools\md_to_pdf_cli.py partes dist\documento.pdf --title "Mi documento" --footer "Documento de trabajo"
+uv run python tools\md_to_docx_cli.py sections dist\document.docx
+uv run python tools\md_to_pdf_cli.py sections dist\document.pdf --title "My document" --footer "Working document"
 ```
 
-## Meter figuras
+## Add Figures
 
-Guarda las imagenes en `assets/` y referencialas desde los Markdown:
+Store images in `assets/` and reference them from the Markdown files:
 
 ```markdown
-![Figura 1. Diagrama de contexto](../assets/diagrama_contexto.png){width=16}
+![Figure 1. Context diagram](../assets/context_diagram.png){width=16}
 ```
 
-El `width` esta en centimetros. Si no lo pones, usa `16`.
+`width` is expressed in centimeters. If omitted, the default is `16`.
 
-## Markdown soportado
+## Supported Markdown
 
 ```markdown
-# Titulo 1
-## Titulo 2
-### Titulo 3
+# Heading 1
+## Heading 2
+### Heading 3
 
-Parrafo normal separado por lineas en blanco.
+A normal paragraph separated by blank lines.
 
-- Lista simple
-- Otro punto
+- Simple list item
+- Another item
 
-| Columna A | Columna B |
+| Column A | Column B |
 | --- | --- |
-| Valor | Valor |
+| Value | Value |
 
-> [!NOTE] Nota
-> Texto de la nota.
+> [!NOTE] Note
+> Note body.
 
 {{pagebreak}}
 ```
 
-## Ayuda integrada
+## Built-In Help
 
 ```powershell
 python tools\md_to_docx_cli.py --help

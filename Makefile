@@ -2,10 +2,10 @@
 
 UV ?= uv
 PYTHON ?= $(UV) run python
-DOC_TITLE ?= Documento generado desde Markdown
-DOC_FOOTER ?= Documento de trabajo
-DOC_NAME ?= documento
-PARTS ?= partes
+DOC_TITLE ?= Document generated from Markdown
+DOC_FOOTER ?= Working document
+DOC_NAME ?= document
+PARTS ?= sections
 DIST ?= dist
 
 help:

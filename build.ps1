@@ -17,8 +17,8 @@ try {
         $prefixArgs = $python[1..($python.Length - 1)]
     }
 
-    & $command @prefixArgs tools\md_to_pdf_cli.py partes dist\documento.pdf --title "Documento generado desde Markdown" --footer "Documento de trabajo"
-    & $command @prefixArgs tools\md_to_docx_cli.py partes dist\documento.docx
+    & $command @prefixArgs tools\md_to_pdf_cli.py sections dist\document.pdf --title "Document generated from Markdown" --footer "Working document"
+    & $command @prefixArgs tools\md_to_docx_cli.py sections dist\document.docx
 }
 finally {
     Pop-Location

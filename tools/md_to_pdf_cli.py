@@ -30,60 +30,60 @@ GRID = colors.HexColor("#333333")
 MUTED = colors.HexColor("#666666")
 
 STRUCTURE_HELP = """\
-Estructura recomendada:
+Recommended structure:
 
-  mi_documento/
-    partes/
-      00_portada.md
-      01_resumen.md
-      02_arquitectura.md
+  my_document/
+    sections/
+      00_cover.md
+      01_summary.md
+      02_architecture.md
     assets/
-      diagrama_contexto.png
-      flujo_datos.png
+      context_diagram.png
+      data_flow.png
     dist/
-      documento.pdf
-      documento.docx
+      document.pdf
+      document.docx
 
-Uso recomendado:
+Recommended usage:
 
-  python tools/md_to_pdf_cli.py mi_documento/partes mi_documento/dist/documento.pdf
+  python tools/md_to_pdf_cli.py my_document/sections my_document/dist/document.pdf
 
-Tambien puedes pasar un unico Markdown:
+You can also pass a single Markdown file:
 
   python tools/md_to_pdf_cli.py README.md dist/README.pdf
 
-Figuras:
+Figures:
 
-  Guarda las imagenes en assets/ y referencialas desde cada Markdown:
+  Store images in assets/ and reference them from each Markdown file:
 
-  ![Figura 1. Diagrama de contexto](../assets/diagrama_contexto.png){width=16}
+  ![Figure 1. Context diagram](../assets/context_diagram.png){width=16}
 
-Markdown soportado:
+Supported Markdown:
 
-  # Titulo 1
-  ## Titulo 2
-  ### Titulo 3
+  # Heading 1
+  ## Heading 2
+  ### Heading 3
 
-  Parrafos normales separados por lineas en blanco.
+  Normal paragraphs separated by blank lines.
 
-  - Lista simple
-  - Otro punto
+  - Simple list item
+  - Another item
 
-  | Columna A | Columna B |
+  | Column A | Column B |
   | --- | --- |
-  | Valor | Valor |
+  | Value | Value |
 
-  > [!NOTE] Titulo de la nota
-  > Cuerpo de la nota.
+  > [!NOTE] Note title
+  > Note body.
 
   {{pagebreak}}
 
-Notas:
+Notes:
 
-  - Si pasas una carpeta, los .md se procesan en orden alfabetico.
-  - Usa prefijos numericos para controlar el orden: 00_, 01_, 02_...
-  - Las rutas de imagen se resuelven desde el Markdown donde aparecen.
-  - El ancho de imagen esta en centimetros y se limita al ancho util de pagina.
+  - If you pass a folder, .md files are processed alphabetically.
+  - Use numeric prefixes to control order: 00_, 01_, 02_...
+  - Image paths are resolved from the Markdown file where they appear.
+  - Image width is expressed in centimeters and capped at the usable page width.
 """
 
 
@@ -237,7 +237,7 @@ def parse_image(line: str, md_path: Path):
 
 def image_flowable(img_path: Path, caption: str, width: float, available_width: float):
     if not img_path.exists():
-        return para(f"[Imagen no encontrada: {img_path}]")
+        return para(f"[Image not found: {img_path}]")
 
     width = min(width, available_width)
     with PILImage.open(img_path) as src:
@@ -337,7 +337,7 @@ def md_to_flowables(md_path: Path, available_width: float):
             flush_table()
             flush_bullets()
             flush_callout()
-            callout_title = line.replace("> [!NOTE]", "", 1).strip() or "Nota"
+            callout_title = line.replace("> [!NOTE]", "", 1).strip() or "Note"
             callout_body = []
             continue
         if callout_title and line.startswith(">"):
@@ -388,7 +388,7 @@ def collect_markdown_files(input_path: Path, pattern: str, recursive: bool) -> l
     if input_path.is_file():
         return [input_path]
     if not input_path.is_dir():
-        raise FileNotFoundError(f"No existe el origen: {input_path}")
+        raise FileNotFoundError(f"Input path does not exist: {input_path}")
 
     files = input_path.rglob(pattern) if recursive else input_path.glob(pattern)
     return sorted(path for path in files if path.is_file())
@@ -406,7 +406,7 @@ def build_pdf(
     md_files = collect_markdown_files(input_path, pattern, recursive)
     if not md_files:
         raise FileNotFoundError(
-            f"No se encontraron Markdown con patron {pattern!r} en {input_path}"
+            f"No Markdown files matching pattern {pattern!r} were found in {input_path}"
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -442,7 +442,7 @@ def build_pdf(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convierte uno o varios ficheros Markdown a PDF.",
+        description="Convert one or more Markdown files to PDF.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=STRUCTURE_HELP,
     )
@@ -450,31 +450,31 @@ def parse_args() -> argparse.Namespace:
         "input",
         nargs="?",
         type=Path,
-        help="Fichero .md o carpeta con .md. Si es carpeta, se procesan ordenados por nombre.",
+        help="A .md file or a folder with .md files. Folders are processed by filename.",
     )
     parser.add_argument(
         "output",
         nargs="?",
         type=Path,
-        help="Ruta del PDF de salida. Ejemplo: dist/documento.pdf.",
+        help="Output PDF path. Example: dist/document.pdf.",
     )
     parser.add_argument(
         "--pattern",
         default="*.md",
-        help="Patron de ficheros Markdown cuando input es una carpeta. Por defecto: *.md",
+        help="Markdown file pattern when input is a folder. Default: *.md",
     )
-    parser.add_argument("--recursive", action="store_true", help="Busca Markdown en subcarpetas.")
+    parser.add_argument("--recursive", action="store_true", help="Search Markdown in subfolders.")
     parser.add_argument(
         "--title",
-        default="Documento generado desde Markdown",
-        help="Titulo del PDF.",
+        default="Document generated from Markdown",
+        help="PDF title.",
     )
-    parser.add_argument("--footer", default="Documento de trabajo", help="Texto de pie de pagina.")
-    parser.add_argument("--author", default="", help="Autor en metadatos del PDF.")
+    parser.add_argument("--footer", default="Working document", help="Page footer text.")
+    parser.add_argument("--author", default="", help="Author in PDF metadata.")
     parser.add_argument(
         "--print-structure",
         action="store_true",
-        help="Muestra la estructura recomendada y termina.",
+        help="Print the recommended structure and exit.",
     )
     return parser.parse_args()
 
@@ -486,7 +486,7 @@ def main() -> None:
         return
 
     if not args.input or not args.output:
-        raise SystemExit("Uso: python tools/md_to_pdf_cli.py <input.md|carpeta> <salida.pdf>")
+        raise SystemExit("Usage: python tools/md_to_pdf_cli.py <input.md|folder> <output.pdf>")
 
     output_path = build_pdf(
         args.input,

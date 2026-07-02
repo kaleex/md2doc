@@ -12,52 +12,52 @@ BLUE = RGBColor(31, 78, 121)
 GRAY = RGBColor(102, 102, 102)
 
 STRUCTURE_HELP = """\
-Estructura recomendada:
+Recommended structure:
 
-  mi_documento/
-    partes/
-      00_portada.md
-      01_resumen.md
-      02_arquitectura.md
+  my_document/
+    sections/
+      00_cover.md
+      01_summary.md
+      02_architecture.md
     assets/
-      diagrama_contexto.png
-      flujo_datos.png
+      context_diagram.png
+      data_flow.png
     dist/
-      documento.docx
+      document.docx
 
-Uso recomendado:
+Recommended usage:
 
-  python tools/md_to_docx_cli.py mi_documento/partes mi_documento/dist/documento.docx
+  python tools/md_to_docx_cli.py my_document/sections my_document/dist/document.docx
 
-Tambien puedes pasar un unico Markdown:
+You can also pass a single Markdown file:
 
   python tools/md_to_docx_cli.py README.md dist/README.docx
 
-Markdown soportado:
+Supported Markdown:
 
-  # Titulo 1
-  ## Titulo 2
-  ### Titulo 3
+  # Heading 1
+  ## Heading 2
+  ### Heading 3
 
-  Parrafos normales separados por lineas en blanco.
+  Normal paragraphs separated by blank lines.
 
-  - Lista simple
-  - Otro punto
+  - Simple list item
+  - Another item
 
-  | Columna A | Columna B |
+  | Column A | Column B |
   | --- | --- |
-  | Valor | Valor |
+  | Value | Value |
 
-  ![Figura 1. Caption](../assets/diagrama.png){width=16}
+  ![Figure 1. Caption](../assets/diagram.png){width=16}
 
   {{pagebreak}}
 
-Notas:
+Notes:
 
-  - Si pasas una carpeta, los .md se procesan en orden alfabetico.
-  - Usa prefijos numericos para controlar el orden: 00_, 01_, 02_...
-  - Las rutas de imagen se resuelven desde el Markdown donde aparecen.
-  - El ancho de imagen esta en centimetros y se limita a 17 cm.
+  - If you pass a folder, .md files are processed alphabetically.
+  - Use numeric prefixes to control order: 00_, 01_, 02_...
+  - Image paths are resolved from the Markdown file where they appear.
+  - Image width is expressed in centimeters and capped at 17 cm.
 """
 
 
@@ -170,7 +170,7 @@ def add_image(doc: Document, line: str, md_path: Path) -> None:
     caption, raw_path, raw_width = match.groups()
     img_path = (md_path.parent / raw_path).resolve()
     if not img_path.exists():
-        add_paragraph(doc, f"[Imagen no encontrada: {raw_path}]", italic=True)
+        add_paragraph(doc, f"[Image not found: {raw_path}]", italic=True)
         return
 
     width_cm = min(float(raw_width or 16), 17.0)
@@ -289,7 +289,7 @@ def collect_markdown_files(input_path: Path, pattern: str, recursive: bool) -> l
     if input_path.is_file():
         return [input_path]
     if not input_path.is_dir():
-        raise FileNotFoundError(f"No existe el origen: {input_path}")
+        raise FileNotFoundError(f"Input path does not exist: {input_path}")
 
     files = input_path.rglob(pattern) if recursive else input_path.glob(pattern)
     return sorted(path for path in files if path.is_file())
@@ -299,7 +299,7 @@ def build_docx(input_path: Path, output_path: Path, pattern: str, recursive: boo
     md_files = collect_markdown_files(input_path, pattern, recursive)
     if not md_files:
         raise FileNotFoundError(
-            f"No se encontraron Markdown con patron {pattern!r} en {input_path}"
+            f"No Markdown files matching pattern {pattern!r} were found in {input_path}"
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -317,7 +317,7 @@ def build_docx(input_path: Path, output_path: Path, pattern: str, recursive: boo
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convierte uno o varios ficheros Markdown a un documento Word .docx.",
+        description="Convert one or more Markdown files to a Word .docx document.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=STRUCTURE_HELP,
     )
@@ -325,28 +325,28 @@ def parse_args() -> argparse.Namespace:
         "input",
         nargs="?",
         type=Path,
-        help="Fichero .md o carpeta con .md. Si es carpeta, se procesan ordenados por nombre.",
+        help="A .md file or a folder with .md files. Folders are processed by filename.",
     )
     parser.add_argument(
         "output",
         nargs="?",
         type=Path,
-        help="Ruta del .docx de salida. Ejemplo: dist/documento.docx.",
+        help="Output .docx path. Example: dist/document.docx.",
     )
     parser.add_argument(
         "--pattern",
         default="*.md",
-        help="Patron de ficheros Markdown cuando input es una carpeta. Por defecto: *.md",
+        help="Markdown file pattern when input is a folder. Default: *.md",
     )
     parser.add_argument(
         "--recursive",
         action="store_true",
-        help="Busca Markdown tambien en subcarpetas.",
+        help="Also search for Markdown files in subfolders.",
     )
     parser.add_argument(
         "--print-structure",
         action="store_true",
-        help="Muestra la estructura recomendada y termina.",
+        help="Print the recommended structure and exit.",
     )
     return parser.parse_args()
 
@@ -358,7 +358,7 @@ def main() -> None:
         return
 
     if not args.input or not args.output:
-        raise SystemExit("Uso: python tools/md_to_docx_cli.py <input.md|carpeta> <salida.docx>")
+        raise SystemExit("Usage: python tools/md_to_docx_cli.py <input.md|folder> <output.docx>")
 
     output_path = build_docx(args.input, args.output, args.pattern, args.recursive)
     print(output_path)
