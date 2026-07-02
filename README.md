@@ -252,7 +252,7 @@ services:
 - lint and tests
 - Python package build
 - sample PDF/DOCX build
-- Bandit static security scan
+- Bandit static security scan, failing on medium/high severity findings
 - pip-audit dependency scan
 - GitHub CodeQL analysis
 - short-retention document artifacts

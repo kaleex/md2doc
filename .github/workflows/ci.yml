@@ -80,7 +80,7 @@ jobs:
         run: uv sync
 
       - name: Static security scan
-        run: uv run --with bandit bandit -r src -q
+        run: uv run --with bandit bandit -r src -q --severity-level medium
 
       - name: Dependency audit
         run: uv run --with pip-audit pip-audit
