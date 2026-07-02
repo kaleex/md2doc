@@ -178,6 +178,19 @@ Then reference the generated image from Markdown:
 npm install -g @mermaid-js/mermaid-cli
 ```
 
+Existing Python-based diagram tools are also supported. For projects that keep
+diagram scripts under `tools/diagrams/` and generate images into `assets_temp/`,
+run:
+
+```powershell
+md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
+```
+
+This executes each Python diagram script as a project module, then copies
+generated images from `assets_temp/` to `assets/`. This is useful for tools based
+on the Python `diagrams` package. That package is installed with `md2doc`; the
+Graphviz system binary is still required by `diagrams`.
+
 Customize output metadata:
 
 ```powershell

@@ -64,6 +64,11 @@ Render Mermaid diagrams:
 
   md2doc diagrams my_document
 
+Render Python diagram scripts:
+
+  md2doc diagrams my_document --renderer python --source tools/diagrams
+    --output assets --pattern *.py
+
 Figures:
 
   Store images in assets/ and reference them from each Markdown file:

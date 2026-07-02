@@ -7,7 +7,7 @@ from importlib import resources
 from importlib.resources.abc import Traversable
 from pathlib import Path
 
-from md2doc.diagrams import render_mermaid_diagrams
+from md2doc.diagrams import render_mermaid_diagrams, render_python_diagrams
 from md2doc.docx_builder import build_docx
 from md2doc.pdf_builder import build_pdf
 
@@ -158,20 +158,34 @@ def build_document(
 
 def render_diagrams(
     root: Path,
+    renderer: str,
     source: str,
     output: str,
+    generated_source: str,
     pattern: str,
     recursive: bool,
     executable: str,
 ) -> list[Path]:
     validate_document_project(root, (source, "assets"))
-    return render_mermaid_diagrams(
-        root / source,
-        root / output,
-        pattern,
-        recursive,
-        executable,
-    )
+    if renderer == "mermaid":
+        return render_mermaid_diagrams(
+            root / source,
+            root / output,
+            pattern,
+            recursive,
+            executable or "mmdc",
+        )
+    if renderer == "python":
+        return render_python_diagrams(
+            root,
+            root / source,
+            root / output,
+            root / generated_source,
+            pattern,
+            recursive,
+            executable,
+        )
+    raise ValueError(f"Unsupported diagram renderer: {renderer}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -238,7 +252,7 @@ def parse_args() -> argparse.Namespace:
 
     diagrams_parser = subparsers.add_parser(
         "diagrams",
-        help="Render Mermaid diagrams to image assets.",
+        help="Render diagrams to image assets.",
     )
     diagrams_parser.add_argument(
         "root",
@@ -248,9 +262,15 @@ def parse_args() -> argparse.Namespace:
         help="Document project root. Default: current directory.",
     )
     diagrams_parser.add_argument(
+        "--renderer",
+        choices=["mermaid", "python"],
+        default="mermaid",
+        help="Diagram renderer to use. Default: mermaid",
+    )
+    diagrams_parser.add_argument(
         "--source",
         default="diagrams",
-        help="Mermaid source folder. Default: diagrams",
+        help="Diagram source folder. Default: diagrams",
     )
     diagrams_parser.add_argument(
         "--output",
@@ -258,20 +278,25 @@ def parse_args() -> argparse.Namespace:
         help="Rendered image output folder. Default: assets/diagrams",
     )
     diagrams_parser.add_argument(
+        "--generated-source",
+        default="assets_temp",
+        help="Generated image folder for the Python renderer. Default: assets_temp",
+    )
+    diagrams_parser.add_argument(
         "--pattern",
         default="*.mmd",
-        help="Mermaid file pattern. Default: *.mmd",
+        help="Diagram source pattern. Default: *.mmd",
     )
     diagrams_parser.add_argument(
         "--recursive",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Search Mermaid files in diagram subfolders. Default: enabled.",
+        help="Search diagram source files in subfolders. Default: enabled.",
     )
     diagrams_parser.add_argument(
         "--executable",
-        default="mmdc",
-        help="Mermaid CLI executable. Default: mmdc",
+        default=None,
+        help="Renderer executable. Default: mmdc for Mermaid, current Python for Python.",
     )
 
     install_deps_parser = subparsers.add_parser(
@@ -323,8 +348,10 @@ def main() -> None:
         if args.command == "diagrams":
             outputs = render_diagrams(
                 args.root,
+                args.renderer,
                 args.source,
                 args.output,
+                args.generated_source,
                 args.pattern,
                 args.recursive,
                 args.executable,

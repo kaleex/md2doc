@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".svg"}
 
 
 def collect_mermaid_files(input_path: Path, pattern: str, recursive: bool) -> list[Path]:
@@ -10,6 +14,14 @@ def collect_mermaid_files(input_path: Path, pattern: str, recursive: bool) -> li
 
     files = input_path.rglob(pattern) if recursive else input_path.glob(pattern)
     return sorted(path for path in files if path.is_file())
+
+
+def collect_python_diagram_scripts(input_path: Path, pattern: str, recursive: bool) -> list[Path]:
+    if not input_path.is_dir():
+        raise FileNotFoundError(f"Python diagrams folder does not exist: {input_path}")
+
+    files = input_path.rglob(pattern) if recursive else input_path.glob(pattern)
+    return sorted(path for path in files if path.is_file() and path.name != "__init__.py")
 
 
 def render_mermaid_diagrams(
@@ -50,3 +62,65 @@ def render_mermaid_diagrams(
         outputs.append(destination)
 
     return outputs
+
+
+def module_name_for_script(project_root: Path, script: Path) -> str:
+    try:
+        relative = script.relative_to(project_root)
+    except ValueError as error:
+        raise ValueError(f"{script} is not inside project root {project_root}") from error
+    return ".".join(relative.with_suffix("").parts)
+
+
+def copy_generated_images(generated_source: Path, output_path: Path) -> list[Path]:
+    if not generated_source.is_dir():
+        raise FileNotFoundError(f"Generated diagrams folder does not exist: {generated_source}")
+
+    outputs: list[Path] = []
+    for source in sorted(path for path in generated_source.rglob("*") if path.is_file()):
+        if source.suffix.lower() not in IMAGE_SUFFIXES:
+            continue
+
+        destination = output_path / source.relative_to(generated_source)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        outputs.append(destination)
+
+    if not outputs:
+        raise FileNotFoundError(f"No generated diagram images were found in {generated_source}")
+    return outputs
+
+
+def render_python_diagrams(
+    project_root: Path,
+    input_path: Path,
+    output_path: Path,
+    generated_source: Path,
+    pattern: str,
+    recursive: bool,
+    python_executable: str | None = None,
+) -> list[Path]:
+    scripts = collect_python_diagram_scripts(input_path, pattern, recursive)
+    if not scripts:
+        raise FileNotFoundError(
+            f"No Python diagram scripts matching pattern {pattern!r} were found in {input_path}"
+        )
+
+    executable = python_executable or sys.executable
+    for script in scripts:
+        module_name = module_name_for_script(project_root, script)
+        try:
+            subprocess.run(
+                [executable, "-m", module_name],
+                cwd=project_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError as error:
+            raise FileNotFoundError(f"Python executable {executable!r} was not found") from error
+        except subprocess.CalledProcessError as error:
+            message = error.stderr.strip() or error.stdout.strip() or "Python diagram failed"
+            raise RuntimeError(f"{script}: {message}") from error
+
+    return copy_generated_images(generated_source, output_path)

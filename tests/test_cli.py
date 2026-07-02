@@ -10,7 +10,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from md2doc import cli
-from md2doc.diagrams import collect_mermaid_files, render_mermaid_diagrams
+from md2doc.diagrams import (
+    collect_mermaid_files,
+    collect_python_diagram_scripts,
+    render_mermaid_diagrams,
+    render_python_diagrams,
+)
 from md2doc.docx_builder import build_docx
 from md2doc.docx_builder import collect_markdown_files as collect_docx_markdown_files
 from md2doc.pdf_builder import collect_markdown_files as collect_pdf_markdown_files
@@ -158,6 +163,45 @@ class CliTests(unittest.TestCase):
         self.assertEqual(render_mermaid.call_args.args[1], Path(tmp) / "assets" / "diagrams")
         self.assertTrue(render_mermaid.call_args.args[3])
 
+    def test_diagrams_command_can_use_python_renderer(self) -> None:
+        stdout = io.StringIO()
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "md2doc",
+                    "diagrams",
+                    tmp,
+                    "--renderer",
+                    "python",
+                    "--source",
+                    "tools/diagrams",
+                    "--output",
+                    "assets",
+                    "--pattern",
+                    "*.py",
+                ],
+            ),
+            patch.object(
+                cli,
+                "render_python_diagrams",
+                return_value=[Path(tmp) / "assets" / "diagram.png"],
+            ) as render_python,
+            contextlib.redirect_stdout(stdout),
+        ):
+            root = Path(tmp)
+            (root / "tools" / "diagrams").mkdir(parents=True)
+            (root / "assets").mkdir()
+            cli.main()
+
+        self.assertEqual(render_python.call_args.args[0], Path(tmp))
+        self.assertEqual(render_python.call_args.args[1], Path(tmp) / "tools" / "diagrams")
+        self.assertEqual(render_python.call_args.args[2], Path(tmp) / "assets")
+        self.assertEqual(render_python.call_args.args[3], Path(tmp) / "assets_temp")
+
 
 class MarkdownCollectionTests(unittest.TestCase):
     def test_collect_markdown_files_can_search_subfolders(self) -> None:
@@ -220,6 +264,39 @@ class MermaidRenderingTests(unittest.TestCase):
                 outputs = render_mermaid_diagrams(source, output, "*.mmd", True, "mmdc")
 
         self.assertEqual(outputs, [output / "01_nested" / "00_detail.png"])
+        run.assert_called_once()
+
+
+class PythonDiagramRenderingTests(unittest.TestCase):
+    def test_collect_python_scripts_ignores_package_init(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "__init__.py").write_text("", encoding="utf-8")
+            (root / "network.py").write_text("def main(): pass", encoding="utf-8")
+
+            files = collect_python_diagram_scripts(root, "*.py", recursive=True)
+
+        self.assertEqual(files, [root / "network.py"])
+
+    def test_render_python_diagrams_copies_generated_images(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "tools" / "diagrams"
+            generated = root / "assets_temp"
+            output = root / "assets"
+            source.mkdir(parents=True)
+            generated.mkdir()
+            (root / "tools" / "__init__.py").write_text("", encoding="utf-8")
+            (source / "__init__.py").write_text("", encoding="utf-8")
+            (source / "network.py").write_text("def main(): pass", encoding="utf-8")
+
+            def fake_run(_command, **_kwargs):
+                (generated / "network.png").write_text("png", encoding="utf-8")
+
+            with patch("md2doc.diagrams.subprocess.run", side_effect=fake_run) as run:
+                outputs = render_python_diagrams(root, source, output, generated, "*.py", True)
+
+        self.assertEqual(outputs, [output / "network.png"])
         run.assert_called_once()
 
 

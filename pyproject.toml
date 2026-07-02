@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kaleex-md2doc"
-version = "0.2.0"
+version = "0.2.1"
 description = "Create PDF and DOCX documents from Markdown project templates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,6 +26,7 @@ classifiers = [
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
 dependencies = [
+    "diagrams>=0.24.4",
     "pillow>=11.3.0",
     "python-docx>=1.2.0",
     "reportlab>=4.4.4",
