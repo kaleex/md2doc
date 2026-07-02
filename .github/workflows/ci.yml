@@ -1,0 +1,119 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "release/**"
+      - "hotfix/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Test
+        run: uv run python -m unittest discover -s tests
+
+      - name: Build package
+        run: uv build
+
+      - name: Build sample documents
+        run: uv run md2doc build --name ci-document
+
+      - name: Upload generated documents
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2doc-sample
+          path: |
+            dist/ci-document.pdf
+            dist/ci-document.docx
+          if-no-files-found: error
+          retention-days: 7
+
+  security:
+    name: security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Static security scan
+        run: uv run --with bandit bandit -r src -q
+
+      - name: Dependency audit
+        run: uv run --with pip-audit pip-audit
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3
+
+  gitops:
+    name: metadata-dry-run
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - security
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate package metadata
+        run: |
+          python - <<'PY'
+          import tomllib
+          from pathlib import Path
+
+          pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          init_file = Path("src/md2doc/__init__.py").read_text(encoding="utf-8")
+          version = pyproject["project"]["version"]
+          expected = f'__version__ = "{version}"'
+          if expected not in init_file:
+              raise SystemExit(f"Version mismatch: expected {expected}")
+          print(f"Metadata dry-run OK for md2doc {version}")
+          PY

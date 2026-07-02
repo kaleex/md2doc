@@ -46,6 +46,35 @@ uv sync
 uv run md2doc --help
 ```
 
+Install from this repository on Windows:
+
+```powershell
+.\scripts\install.ps1
+```
+
+Install from this repository on Linux/macOS:
+
+```bash
+./scripts/install.sh
+```
+
+Both scripts install the `md2doc` command and, when `npm` is available, Mermaid
+CLI for diagram rendering. To skip Mermaid:
+
+```powershell
+.\scripts\install.ps1 -SkipMermaid
+```
+
+```bash
+./scripts/install.sh --skip-mermaid
+```
+
+Install optional external dependencies after `md2doc` is already installed:
+
+```powershell
+md2doc install-deps
+```
+
 ## Create A Document Project
 
 ```powershell
@@ -60,6 +89,7 @@ my-document/
     00_cover.md
     01_content.md
   assets/
+    diagrams/
     context_diagram.png
   diagrams/
   dist/
@@ -67,6 +97,12 @@ my-document/
 
 Each document is independent: keep one folder per deliverable, proposal, report,
 or architecture document.
+
+Initialize the document folder as a Git repository:
+
+```powershell
+md2doc init my-document --git
+```
 
 ## Build Outputs
 
@@ -94,6 +130,52 @@ Generate only one format:
 ```powershell
 md2doc build my-document --format pdf
 md2doc build my-document --format docx
+```
+
+`md2doc build` searches Markdown files inside `sections/` recursively by default,
+so sections can be grouped in subfolders. Use numeric prefixes in folder and file
+names to control ordering. To only process Markdown files directly inside
+`sections/`, pass `--no-recursive`.
+
+## Render Diagrams
+
+Mermaid diagram sources live in `diagrams/`. They can be organized in
+subfolders:
+
+```text
+my-document/
+  diagrams/
+    02_architecture/
+      network.mmd
+      identity.mmd
+  assets/
+    diagrams/
+```
+
+Render Mermaid diagrams to PNG assets:
+
+```powershell
+md2doc diagrams my-document
+```
+
+This writes images to `assets/diagrams/` while preserving the relative folder
+layout:
+
+```text
+diagrams/02_architecture/network.mmd
+assets/diagrams/02_architecture/network.png
+```
+
+Then reference the generated image from Markdown:
+
+```markdown
+![Network](../../assets/diagrams/02_architecture/network.png){width=16}
+```
+
+`md2doc diagrams` uses Mermaid CLI (`mmdc`) by default. Install it with:
+
+```powershell
+npm install -g @mermaid-js/mermaid-cli
 ```
 
 Customize output metadata:
@@ -163,8 +245,27 @@ the folder structure, example sections, assets, and build defaults.
 
 ## CI/CD Example
 
-Because builds are deterministic, a pipeline can generate deliverables on every
-merge:
+Because builds are deterministic, the included GitHub Actions workflow validates
+the project on pull requests and branch pushes without relying on paid external
+services:
+
+- lint and tests
+- Python package build
+- sample PDF/DOCX build
+- Bandit static security scan
+- pip-audit dependency scan
+- GitHub CodeQL analysis
+- short-retention document artifacts
+- GitOps dry-run that validates release metadata
+
+The workflow runs on GitHub-hosted runners. Public repositories usually have
+free hosted runner usage; private repositories may consume the account's
+included minutes depending on the GitHub plan.
+
+Branching follows a lightweight GitFlow model. See `docs/gitflow.md` for the
+working rules for `main`, `develop`, `feature/**`, `release/**`, and `hotfix/**`.
+
+A minimal build-only pipeline would look like this:
 
 ```yaml
 name: docs
