@@ -17,8 +17,12 @@ try {
         $prefixArgs = $python[1..($python.Length - 1)]
     }
 
-    & $command @prefixArgs tools\md_to_pdf_cli.py sections dist\document.pdf --title "Document generated from Markdown" --footer "Working document"
-    & $command @prefixArgs tools\md_to_docx_cli.py sections dist\document.docx
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        uv run md2doc build . --title "Document generated from Markdown" --footer "Working document"
+        return
+    }
+
+    & $command @prefixArgs -m md2doc.cli build . --title "Document generated from Markdown" --footer "Working document"
 }
 finally {
     Pop-Location

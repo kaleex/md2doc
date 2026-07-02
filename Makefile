@@ -1,16 +1,15 @@
-.PHONY: help install pdf docx build clean structure
+.PHONY: help install package-build pdf docx build clean structure
 
 UV ?= uv
-PYTHON ?= $(UV) run python
+MD2DOC ?= $(UV) run md2doc
 DOC_TITLE ?= Document generated from Markdown
 DOC_FOOTER ?= Working document
 DOC_NAME ?= document
-PARTS ?= sections
-DIST ?= dist
 
 help:
 	@echo "Targets:"
-	@echo "  make install    Install Python dependencies"
+	@echo "  make install    Install project dependencies"
+	@echo "  make package-build  Build wheel and source distribution"
 	@echo "  make pdf        Generate dist/$(DOC_NAME).pdf"
 	@echo "  make docx       Generate dist/$(DOC_NAME).docx"
 	@echo "  make build      Generate PDF and DOCX"
@@ -20,16 +19,19 @@ help:
 install:
 	$(UV) sync
 
+package-build:
+	$(UV) build
+
 pdf:
-	$(PYTHON) tools/md_to_pdf_cli.py "$(PARTS)" "$(DIST)/$(DOC_NAME).pdf" --title "$(DOC_TITLE)" --footer "$(DOC_FOOTER)"
+	$(MD2DOC) build . --format pdf --name "$(DOC_NAME)" --title "$(DOC_TITLE)" --footer "$(DOC_FOOTER)"
 
 docx:
-	$(PYTHON) tools/md_to_docx_cli.py "$(PARTS)" "$(DIST)/$(DOC_NAME).docx"
+	$(MD2DOC) build . --format docx --name "$(DOC_NAME)"
 
 build: pdf docx
 
 clean:
-	$(PYTHON) -c "import shutil; shutil.rmtree('$(DIST)', ignore_errors=True)"
+	$(UV) run python -c "import shutil; shutil.rmtree('dist', ignore_errors=True); shutil.rmtree('build', ignore_errors=True)"
 
 structure:
-	$(PYTHON) tools/md_to_pdf_cli.py --print-structure
+	$(MD2DOC) structure

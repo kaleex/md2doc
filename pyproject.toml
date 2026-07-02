@@ -1,12 +1,53 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "markdown-document-export"
+name = "kaleex-md2doc"
 version = "0.1.0"
-description = "Clean, reproducible Markdown to PDF/DOCX document export template."
+description = "Create PDF and DOCX documents from Markdown project templates."
+readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Kaleex" },
+]
+keywords = ["markdown", "docx", "pdf", "documents", "templates"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Documentation",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
 dependencies = [
     "pillow>=11.3.0",
     "python-docx>=1.2.0",
     "reportlab>=4.4.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/kaleex/md2doc"
+Repository = "https://github.com/kaleex/md2doc"
+Issues = "https://github.com/kaleex/md2doc/issues"
+
+[project.scripts]
+md2doc = "md2doc.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+md2doc = ["templates/default/**/*"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
 ]
 
 [tool.ruff]

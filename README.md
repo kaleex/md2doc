@@ -1,56 +1,65 @@
-# Markdown to DOCX/PDF Template
+# md2doc
 
-A clean, reproducible template for generating Word `.docx` and PDF documents from Markdown.
+Create PDF and DOCX documents from Markdown project templates.
 
-## Installation
+This repository is packaged for PyPI as `kaleex-md2doc` and exposes the `md2doc`
+command.
 
-With `uv`:
+## Install
+
+From PyPI, once published:
+
+```powershell
+pip install kaleex-md2doc
+```
+
+For isolated CLI usage:
+
+```powershell
+pipx install kaleex-md2doc
+```
+
+During local development:
 
 ```powershell
 uv sync
+uv run md2doc --help
 ```
 
-If you have `make` available:
+## Create A Document Project
 
 ```powershell
-make install
+md2doc init my-document
 ```
 
-## Recommended Structure
+This creates:
 
 ```text
-my_document/
+my-document/
   sections/
     00_cover.md
-    01_summary.md
-    02_architecture.md
+    01_content.md
   assets/
     context_diagram.png
-    data_flow.png
+  diagrams/
   dist/
-    document.docx
-    document.pdf
-  tools/
-    md_to_docx_cli.py
-    md_to_pdf_cli.py
-  Makefile
-  build.ps1
-  requirements.txt
-  pyproject.toml
 ```
 
-Use numeric prefixes in `sections/` to control the output order.
+Each document is independent: keep one folder per deliverable, proposal, report,
+or architecture document.
 
-## Generate Everything
+## Build Outputs
+
+From inside a document folder:
 
 ```powershell
-make build
+md2doc build
 ```
 
-On Windows, if you do not have `make`, use:
+From outside:
 
 ```powershell
-.\build.ps1
+md2doc build my-document
 ```
 
 This generates:
@@ -60,36 +69,37 @@ dist/document.pdf
 dist/document.docx
 ```
 
-You can customize the output name, title, and footer:
+Generate only one format:
 
 ```powershell
-make build DOC_NAME=architecture DOC_TITLE="Architecture v0" DOC_FOOTER="Working document"
+md2doc build my-document --format pdf
+md2doc build my-document --format docx
 ```
 
-## Generate Separately
+Customize output metadata:
 
 ```powershell
-make pdf
-make docx
+md2doc build my-document --name architecture --title "Architecture v0" --footer "Working document"
 ```
 
-Without `make`:
+## Local Template Example
+
+This repository also contains a sample document in `sections/` and `assets/`.
+You can build it with:
 
 ```powershell
-python tools\md_to_docx_cli.py sections dist\document.docx
-python tools\md_to_pdf_cli.py sections dist\document.pdf --title "My document" --footer "Working document"
+uv run md2doc build
 ```
 
-Without `make`, but using `uv`:
+Or, on Windows:
 
 ```powershell
-uv run python tools\md_to_docx_cli.py sections dist\document.docx
-uv run python tools\md_to_pdf_cli.py sections dist\document.pdf --title "My document" --footer "Working document"
+.\build.ps1
 ```
 
 ## Add Figures
 
-Store images in `assets/` and reference them from the Markdown files:
+Store images in `assets/` and reference them from Markdown files:
 
 ```markdown
 ![Figure 1. Context diagram](../assets/context_diagram.png){width=16}
@@ -119,11 +129,14 @@ A normal paragraph separated by blank lines.
 {{pagebreak}}
 ```
 
-## Built-In Help
+## Template-Oriented Workflow
+
+The package currently ships one template: `default`.
 
 ```powershell
-python tools\md_to_docx_cli.py --help
-python tools\md_to_pdf_cli.py --help
-python tools\md_to_pdf_cli.py --print-structure
-make structure
+md2doc init customer-report --template default
+md2doc build customer-report --name customer-report
 ```
+
+The intended scaling model is one folder per document and templates that scaffold
+the folder structure, example sections, assets, and build defaults.
