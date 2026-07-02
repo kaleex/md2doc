@@ -150,7 +150,7 @@ class CliTests(unittest.TestCase):
             patch.object(
                 cli,
                 "render_mermaid_diagrams",
-                return_value=[Path(tmp) / "assets" / "diagrams" / "a.png"],
+                return_value=[Path(tmp) / "assets" / "a.png"],
             ) as render_mermaid,
             contextlib.redirect_stdout(stdout),
         ):
@@ -160,7 +160,7 @@ class CliTests(unittest.TestCase):
             cli.main()
 
         self.assertEqual(render_mermaid.call_args.args[0], Path(tmp) / "diagrams")
-        self.assertEqual(render_mermaid.call_args.args[1], Path(tmp) / "assets" / "diagrams")
+        self.assertEqual(render_mermaid.call_args.args[1], Path(tmp) / "assets")
         self.assertTrue(render_mermaid.call_args.args[3])
 
     def test_diagrams_command_can_use_python_renderer(self) -> None:

@@ -89,7 +89,6 @@ my-document/
     00_cover.md
     01_content.md
   assets/
-    diagrams/
     context_diagram.png
   diagrams/
   dist/
@@ -149,7 +148,6 @@ my-document/
       network.mmd
       identity.mmd
   assets/
-    diagrams/
 ```
 
 Render Mermaid diagrams to PNG assets:
@@ -158,18 +156,17 @@ Render Mermaid diagrams to PNG assets:
 md2doc diagrams my-document
 ```
 
-This writes images to `assets/diagrams/` while preserving the relative folder
-layout:
+This writes images to `assets/` while preserving the relative folder layout:
 
 ```text
 diagrams/02_architecture/network.mmd
-assets/diagrams/02_architecture/network.png
+assets/02_architecture/network.png
 ```
 
 Then reference the generated image from Markdown:
 
 ```markdown
-![Network](../../assets/diagrams/02_architecture/network.png){width=16}
+![Network](../../assets/02_architecture/network.png){width=16}
 ```
 
 `md2doc diagrams` uses Mermaid CLI (`mmdc`) by default. Install it with:

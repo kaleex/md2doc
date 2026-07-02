@@ -43,9 +43,8 @@ Recommended structure:
       02_architecture/
         network.mmd
     assets/
-      diagrams/
-        02_architecture/
-          network.png
+      02_architecture/
+        network.png
       context_diagram.png
       data_flow.png
     dist/

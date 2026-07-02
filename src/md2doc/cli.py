@@ -55,7 +55,6 @@ def copy_template(target: Path, template: str, force: bool) -> Path:
     copy_resource_tree(template_root, target, force)
     for folder in ("assets", "diagrams", "dist", "sections"):
         (target / folder).mkdir(parents=True, exist_ok=True)
-    (target / "assets" / "diagrams").mkdir(parents=True, exist_ok=True)
     return target
 
 
@@ -272,8 +271,8 @@ def parse_args() -> argparse.Namespace:
     )
     diagrams_parser.add_argument(
         "--output",
-        default="assets/diagrams",
-        help="Rendered image output folder. Default: assets/diagrams",
+        default="assets",
+        help="Rendered image output folder. Default: assets",
     )
     diagrams_parser.add_argument(
         "--pattern",
