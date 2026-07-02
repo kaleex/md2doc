@@ -24,6 +24,9 @@ Recommended structure:
     diagrams/
       02_architecture/
         network.mmd
+    tools/
+      diagrams/
+        network.py
     assets/
       02_architecture/
         network.png
@@ -46,7 +49,7 @@ Render Mermaid diagrams:
 
 Render Python diagram scripts:
 
-  md2doc diagrams my_document --renderer python --source tools/diagrams
+  uv run --with diagrams md2doc diagrams my_document --renderer python --source tools/diagrams
     --output assets --pattern *.py
 
 Supported Markdown:

@@ -138,70 +138,37 @@ names to control ordering. To only process Markdown files directly inside
 
 ## Render Diagrams
 
-Mermaid diagram sources live in `diagrams/`. They can be organized in
-subfolders:
+Diagram sources and rendered images are intentionally separate:
 
 ```text
 my-document/
   diagrams/
     02_architecture/
       network.mmd
-      identity.mmd
   assets/
+    02_architecture/
+      network.png
 ```
 
-Render Mermaid diagrams to PNG assets:
+Render Mermaid diagrams:
 
 ```powershell
 md2doc diagrams my-document
 ```
 
-This writes images to `assets/` while preserving the relative folder layout:
+Render Python diagram generators:
 
-```text
-diagrams/02_architecture/network.mmd
-assets/02_architecture/network.png
+```powershell
+uv run --with diagrams md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
 ```
 
-Then reference the generated image from Markdown:
+Reference generated images from Markdown:
 
 ```markdown
 ![Network](../../assets/02_architecture/network.png){width=16}
 ```
 
-`md2doc diagrams` uses Mermaid CLI (`mmdc`) by default. Install it with:
-
-```powershell
-npm install -g @mermaid-js/mermaid-cli
-```
-
-Existing Python-based diagram tools are also supported. For projects that keep
-diagram scripts under `tools/diagrams/`, run:
-
-```powershell
-md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
-```
-
-This executes each Python diagram script as a project module and expects the
-scripts to write images directly into `assets/`. During execution, `md2doc`
-provides these environment variables:
-
-- `MD2DOC_PROJECT_ROOT`: document project root.
-- `MD2DOC_ASSETS_DIR`: target assets folder.
-- `MD2DOC_OUTPUT_DIR`: target output folder for generated diagrams.
-
-This is useful for tools based on the Python `diagrams` package. The Python
-renderer uses the same Python interpreter that is running `md2doc`; pass
-`--executable .venv/Scripts/python.exe` or another interpreter when the diagram
-dependencies live in a project virtual environment. The Graphviz system binary is
-still required by `diagrams`.
-
-For one-off rendering without adding `diagrams` to the `md2doc` package
-environment:
-
-```powershell
-uv run --with diagrams md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
-```
+See `docs/diagrams.md` for Mermaid, Python generator, and dependency details.
 
 Customize output metadata:
 
@@ -281,7 +248,7 @@ services:
 - pip-audit dependency scan
 - GitHub CodeQL analysis
 - short-retention document artifacts
-- GitOps dry-run that validates release metadata
+- metadata dry-run that validates package version consistency
 
 The workflow runs on GitHub-hosted runners. Public repositories usually have
 free hosted runner usage; private repositories may consume the account's
