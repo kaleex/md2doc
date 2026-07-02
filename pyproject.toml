@@ -1,0 +1,17 @@
+[project]
+name = "markdown-document-export"
+version = "0.1.0"
+description = "Clean, reproducible Markdown to PDF/DOCX document export template."
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=11.3.0",
+    "python-docx>=1.2.0",
+    "reportlab>=4.4.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
