@@ -179,19 +179,25 @@ npm install -g @mermaid-js/mermaid-cli
 ```
 
 Existing Python-based diagram tools are also supported. For projects that keep
-diagram scripts under `tools/diagrams/` and generate images into `assets_temp/`,
-run:
+diagram scripts under `tools/diagrams/`, run:
 
 ```powershell
 md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
 ```
 
-This executes each Python diagram script as a project module, then copies
-generated images from `assets_temp/` to `assets/`. This is useful for tools based
-on the Python `diagrams` package. The Python renderer uses the same Python
-interpreter that is running `md2doc`; pass `--executable .venv/Scripts/python.exe`
-or another interpreter when the diagram dependencies live in a project virtual
-environment. The Graphviz system binary is still required by `diagrams`.
+This executes each Python diagram script as a project module and expects the
+scripts to write images directly into `assets/`. During execution, `md2doc`
+provides these environment variables:
+
+- `MD2DOC_PROJECT_ROOT`: document project root.
+- `MD2DOC_ASSETS_DIR`: target assets folder.
+- `MD2DOC_OUTPUT_DIR`: target output folder for generated diagrams.
+
+This is useful for tools based on the Python `diagrams` package. The Python
+renderer uses the same Python interpreter that is running `md2doc`; pass
+`--executable .venv/Scripts/python.exe` or another interpreter when the diagram
+dependencies live in a project virtual environment. The Graphviz system binary is
+still required by `diagrams`.
 
 For one-off rendering without adding `diagrams` to the `md2doc` package
 environment:

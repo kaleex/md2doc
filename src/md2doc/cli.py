@@ -161,7 +161,6 @@ def render_diagrams(
     renderer: str,
     source: str,
     output: str,
-    generated_source: str,
     pattern: str,
     recursive: bool,
     executable: str,
@@ -180,7 +179,6 @@ def render_diagrams(
             root,
             root / source,
             root / output,
-            root / generated_source,
             pattern,
             recursive,
             executable,
@@ -278,11 +276,6 @@ def parse_args() -> argparse.Namespace:
         help="Rendered image output folder. Default: assets/diagrams",
     )
     diagrams_parser.add_argument(
-        "--generated-source",
-        default="assets_temp",
-        help="Generated image folder for the Python renderer. Default: assets_temp",
-    )
-    diagrams_parser.add_argument(
         "--pattern",
         default="*.mmd",
         help="Diagram source pattern. Default: *.mmd",
@@ -351,7 +344,6 @@ def main() -> None:
                 args.renderer,
                 args.source,
                 args.output,
-                args.generated_source,
                 args.pattern,
                 args.recursive,
                 args.executable,

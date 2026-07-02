@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import shutil
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -72,22 +72,17 @@ def module_name_for_script(project_root: Path, script: Path) -> str:
     return ".".join(relative.with_suffix("").parts)
 
 
-def copy_generated_images(generated_source: Path, output_path: Path) -> list[Path]:
-    if not generated_source.is_dir():
-        raise FileNotFoundError(f"Generated diagrams folder does not exist: {generated_source}")
-
+def collect_generated_images(output_path: Path) -> list[Path]:
     outputs: list[Path] = []
-    for source in sorted(path for path in generated_source.rglob("*") if path.is_file()):
-        if source.suffix.lower() not in IMAGE_SUFFIXES:
-            continue
-
-        destination = output_path / source.relative_to(generated_source)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        outputs.append(destination)
+    if output_path.is_dir():
+        outputs = sorted(
+            path
+            for path in output_path.rglob("*")
+            if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES
+        )
 
     if not outputs:
-        raise FileNotFoundError(f"No generated diagram images were found in {generated_source}")
+        raise FileNotFoundError(f"No generated diagram images were found in {output_path}")
     return outputs
 
 
@@ -95,7 +90,6 @@ def render_python_diagrams(
     project_root: Path,
     input_path: Path,
     output_path: Path,
-    generated_source: Path,
     pattern: str,
     recursive: bool,
     python_executable: str | None = None,
@@ -107,6 +101,15 @@ def render_python_diagrams(
         )
 
     executable = python_executable or sys.executable
+    output_path.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env.update(
+        {
+            "MD2DOC_PROJECT_ROOT": str(project_root),
+            "MD2DOC_ASSETS_DIR": str(output_path),
+            "MD2DOC_OUTPUT_DIR": str(output_path),
+        }
+    )
     runner = (
         "import runpy, sys; "
         "project_root = sys.argv[1]; "
@@ -124,6 +127,7 @@ def render_python_diagrams(
                 check=True,
                 capture_output=True,
                 text=True,
+                env=env,
             )
         except FileNotFoundError as error:
             raise FileNotFoundError(f"Python executable {executable!r} was not found") from error
@@ -131,4 +135,4 @@ def render_python_diagrams(
             message = error.stderr.strip() or error.stdout.strip() or "Python diagram failed"
             raise RuntimeError(f"{script}: {message}") from error
 
-    return copy_generated_images(generated_source, output_path)
+    return collect_generated_images(output_path)

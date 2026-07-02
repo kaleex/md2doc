@@ -200,7 +200,6 @@ class CliTests(unittest.TestCase):
         self.assertEqual(render_python.call_args.args[0], Path(tmp))
         self.assertEqual(render_python.call_args.args[1], Path(tmp) / "tools" / "diagrams")
         self.assertEqual(render_python.call_args.args[2], Path(tmp) / "assets")
-        self.assertEqual(render_python.call_args.args[3], Path(tmp) / "assets_temp")
 
 
 class MarkdownCollectionTests(unittest.TestCase):
@@ -278,23 +277,22 @@ class PythonDiagramRenderingTests(unittest.TestCase):
 
         self.assertEqual(files, [root / "network.py"])
 
-    def test_render_python_diagrams_copies_generated_images(self) -> None:
+    def test_render_python_diagrams_reads_images_generated_in_assets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             source = root / "tools" / "diagrams"
-            generated = root / "assets_temp"
             output = root / "assets"
             source.mkdir(parents=True)
-            generated.mkdir()
             (root / "tools" / "__init__.py").write_text("", encoding="utf-8")
             (source / "__init__.py").write_text("", encoding="utf-8")
             (source / "network.py").write_text("def main(): pass", encoding="utf-8")
 
-            def fake_run(_command, **_kwargs):
-                (generated / "network.png").write_text("png", encoding="utf-8")
+            def fake_run(_command, **kwargs):
+                target = Path(kwargs["env"]["MD2DOC_OUTPUT_DIR"])
+                (target / "network.png").write_text("png", encoding="utf-8")
 
             with patch("md2doc.diagrams.subprocess.run", side_effect=fake_run) as run:
-                outputs = render_python_diagrams(root, source, output, generated, "*.py", True)
+                outputs = render_python_diagrams(root, source, output, "*.py", True)
 
         self.assertEqual(outputs, [output / "network.png"])
         run.assert_called_once()
