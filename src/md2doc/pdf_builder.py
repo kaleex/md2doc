@@ -36,8 +36,16 @@ Recommended structure:
     sections/
       00_cover.md
       01_summary.md
-      02_architecture.md
+      02_architecture/
+        00_context.md
+        01_decisions.md
+    diagrams/
+      02_architecture/
+        network.mmd
     assets/
+      diagrams/
+        02_architecture/
+          network.png
       context_diagram.png
       data_flow.png
     dist/
@@ -46,11 +54,15 @@ Recommended structure:
 
 Recommended usage:
 
-  python tools/md_to_pdf_cli.py my_document/sections my_document/dist/document.pdf
+  md2doc build my_document --format pdf
 
-You can also pass a single Markdown file:
+Generate all outputs:
 
-  python tools/md_to_pdf_cli.py README.md dist/README.pdf
+  md2doc build my_document
+
+Render Mermaid diagrams:
+
+  md2doc diagrams my_document
 
 Figures:
 
@@ -80,8 +92,9 @@ Supported Markdown:
 
 Notes:
 
-  - If you pass a folder, .md files are processed alphabetically.
-  - Use numeric prefixes to control order: 00_, 01_, 02_...
+  - md2doc build searches section subfolders by default.
+  - If you pass a folder, .md files are processed alphabetically by path.
+  - Use numeric prefixes in folders and files to control order: 00_, 01_, 02_...
   - Image paths are resolved from the Markdown file where they appear.
   - Image width is expressed in centimeters and capped at the usable page width.
 """
@@ -486,7 +499,7 @@ def main() -> None:
         return
 
     if not args.input or not args.output:
-        raise SystemExit("Usage: python tools/md_to_pdf_cli.py <input.md|folder> <output.pdf>")
+        raise SystemExit("Usage: md2doc build <document-folder> --format pdf")
 
     output_path = build_pdf(
         args.input,

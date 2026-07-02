@@ -18,8 +18,16 @@ Recommended structure:
     sections/
       00_cover.md
       01_summary.md
-      02_architecture.md
+      02_architecture/
+        00_context.md
+        01_decisions.md
+    diagrams/
+      02_architecture/
+        network.mmd
     assets/
+      diagrams/
+        02_architecture/
+          network.png
       context_diagram.png
       data_flow.png
     dist/
@@ -27,11 +35,15 @@ Recommended structure:
 
 Recommended usage:
 
-  python tools/md_to_docx_cli.py my_document/sections my_document/dist/document.docx
+  md2doc build my_document --format docx
 
-You can also pass a single Markdown file:
+Generate all outputs:
 
-  python tools/md_to_docx_cli.py README.md dist/README.docx
+  md2doc build my_document
+
+Render Mermaid diagrams:
+
+  md2doc diagrams my_document
 
 Supported Markdown:
 
@@ -48,14 +60,18 @@ Supported Markdown:
   | --- | --- |
   | Value | Value |
 
+  > [!NOTE] Note title
+  > Note body.
+
   ![Figure 1. Caption](../assets/diagram.png){width=16}
 
   {{pagebreak}}
 
 Notes:
 
-  - If you pass a folder, .md files are processed alphabetically.
-  - Use numeric prefixes to control order: 00_, 01_, 02_...
+  - md2doc build searches section subfolders by default.
+  - If you pass a folder, .md files are processed alphabetically by path.
+  - Use numeric prefixes in folders and files to control order: 00_, 01_, 02_...
   - Image paths are resolved from the Markdown file where they appear.
   - Image width is expressed in centimeters and capped at 17 cm.
 """
@@ -194,11 +210,33 @@ def add_quote(doc: Document, text: str) -> None:
     set_run(run, size=9, italic=True, color=GRAY)
 
 
+def add_callout(doc: Document, title: str, body: str) -> None:
+    table = doc.add_table(rows=1, cols=1)
+    table.style = "Table Grid"
+    cell = table.cell(0, 0)
+    cell._tc.get_or_add_tcPr().append(parse_shading("EAF3FA"))
+
+    title_paragraph = cell.paragraphs[0]
+    title_paragraph.paragraph_format.space_after = Pt(3)
+    title_run = title_paragraph.add_run(clean_inline(title))
+    set_run(title_run, size=9.2, bold=True)
+
+    if body:
+        body_paragraph = cell.add_paragraph()
+        body_paragraph.paragraph_format.space_after = Pt(0)
+        body_run = body_paragraph.add_run(clean_inline(body))
+        set_run(body_run, size=9.4)
+
+    doc.add_paragraph()
+
+
 def md_to_docx(doc: Document, md_path: Path) -> None:
     lines = md_path.read_text(encoding="utf-8-sig").splitlines()
     paragraph: list[str] = []
     table_lines: list[str] = []
     bullets: list[str] = []
+    callout_title: str | None = None
+    callout_body: list[str] = []
     in_comment = False
 
     def flush_paragraph() -> None:
@@ -222,6 +260,13 @@ def md_to_docx(doc: Document, md_path: Path) -> None:
             set_run(run, size=9.4)
         bullets = []
 
+    def flush_callout() -> None:
+        nonlocal callout_title, callout_body
+        if callout_title:
+            add_callout(doc, callout_title, " ".join(callout_body))
+            callout_title = None
+            callout_body = []
+
     for raw in lines:
         line = raw.rstrip().lstrip("\ufeff")
         stripped = line.strip()
@@ -237,6 +282,7 @@ def md_to_docx(doc: Document, md_path: Path) -> None:
             flush_paragraph()
             flush_table()
             flush_bullets()
+            flush_callout()
             if doc.paragraphs:
                 doc.add_page_break()
             continue
@@ -244,33 +290,50 @@ def md_to_docx(doc: Document, md_path: Path) -> None:
             flush_paragraph()
             flush_table()
             flush_bullets()
+            flush_callout()
             continue
         if line.startswith("|"):
             flush_paragraph()
             flush_bullets()
+            flush_callout()
             table_lines.append(line)
             continue
         if line.startswith("- "):
             flush_paragraph()
             flush_table()
+            flush_callout()
             bullets.append(line[2:].strip())
+            continue
+        if line.startswith("> [!NOTE]"):
+            flush_paragraph()
+            flush_table()
+            flush_bullets()
+            flush_callout()
+            callout_title = line.replace("> [!NOTE]", "", 1).strip() or "Note"
+            callout_body = []
+            continue
+        if callout_title and line.startswith(">"):
+            callout_body.append(line[1:].strip())
             continue
         if line.startswith(">"):
             flush_paragraph()
             flush_table()
             flush_bullets()
+            flush_callout()
             add_quote(doc, line.lstrip("> ").strip())
             continue
         if line.startswith("!"):
             flush_paragraph()
             flush_table()
             flush_bullets()
+            flush_callout()
             add_image(doc, line, md_path)
             continue
         if line.startswith("#"):
             flush_paragraph()
             flush_table()
             flush_bullets()
+            flush_callout()
             level = min(len(line) - len(line.lstrip("#")), 3)
             text = line[level:].strip()
             p = doc.add_paragraph(style=f"Heading {level}")
@@ -278,11 +341,13 @@ def md_to_docx(doc: Document, md_path: Path) -> None:
             set_run(run, size={1: 16, 2: 12.5, 3: 10.8}[level], bold=True, color=BLUE)
             continue
 
+        flush_callout()
         paragraph.append(stripped)
 
     flush_paragraph()
     flush_table()
     flush_bullets()
+    flush_callout()
 
 
 def collect_markdown_files(input_path: Path, pattern: str, recursive: bool) -> list[Path]:
@@ -358,7 +423,7 @@ def main() -> None:
         return
 
     if not args.input or not args.output:
-        raise SystemExit("Usage: python tools/md_to_docx_cli.py <input.md|folder> <output.docx>")
+        raise SystemExit("Usage: md2doc build <document-folder> --format docx")
 
     output_path = build_docx(args.input, args.output, args.pattern, args.recursive)
     print(output_path)
