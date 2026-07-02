@@ -188,8 +188,17 @@ md2doc diagrams my-document --renderer python --source tools/diagrams --output a
 
 This executes each Python diagram script as a project module, then copies
 generated images from `assets_temp/` to `assets/`. This is useful for tools based
-on the Python `diagrams` package. That package is installed with `md2doc`; the
-Graphviz system binary is still required by `diagrams`.
+on the Python `diagrams` package. The Python renderer uses the same Python
+interpreter that is running `md2doc`; pass `--executable .venv/Scripts/python.exe`
+or another interpreter when the diagram dependencies live in a project virtual
+environment. The Graphviz system binary is still required by `diagrams`.
+
+For one-off rendering without adding `diagrams` to the `md2doc` package
+environment:
+
+```powershell
+uv run --with diagrams md2doc diagrams my-document --renderer python --source tools/diagrams --output assets --pattern *.py
+```
 
 Customize output metadata:
 

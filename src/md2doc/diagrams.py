@@ -107,11 +107,19 @@ def render_python_diagrams(
         )
 
     executable = python_executable or sys.executable
+    runner = (
+        "import runpy, sys; "
+        "project_root = sys.argv[1]; "
+        "module_name = sys.argv[2]; "
+        "sys.path = [p for p in sys.path if p not in ('', project_root)]; "
+        "sys.path.append(project_root); "
+        "runpy.run_module(module_name, run_name='__main__')"
+    )
     for script in scripts:
         module_name = module_name_for_script(project_root, script)
         try:
             subprocess.run(
-                [executable, "-m", module_name],
+                [executable, "-c", runner, str(project_root), module_name],
                 cwd=project_root,
                 check=True,
                 capture_output=True,
